@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Climate Tipping Points</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Barlow+Condensed:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --red: #c0392b;
+  --red-bright: #e74c3c;
+  --amber: #e67e22;
+  --cream: #f0ebe0;
+  --ink: #0a0a0a;
+  --mid: #1a1a1a;
+  --muted: rgba(240,235,224,0.4);
+  --very-muted: rgba(240,235,224,0.12);
+}
+
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--ink); }
+
+/* ── NOISE TEXTURE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 999; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity: 0.35;
+}
+
+/* ── SLIDE SYSTEM ── */
+#deck { width: 100vw; height: 100vh; position: relative; }
+
+.slide {
+  position: absolute; inset: 0;
+  opacity: 0; pointer-events: none;
+  transition: none;
+}
+.slide.active { opacity: 1; pointer-events: all; animation: glitchIn 0.35s steps(1) forwards; }
+.slide.out { animation: glitchOut 0.2s steps(1) forwards; }
+
+@keyframes glitchIn {
+  0%   { opacity: 0; clip-path: inset(100% 0 0 0); }
+  20%  { opacity: 1; clip-path: inset(60% 0 40% 0); transform: translateX(4px); }
+  40%  { clip-path: inset(20% 0 70% 0); transform: translateX(-3px); }
+  60%  { clip-path: inset(80% 0 5% 0); transform: translateX(2px); }
+  80%  { clip-path: inset(0% 0 0% 0); transform: translateX(0); }
+  100% { opacity: 1; clip-path: inset(0 0 0 0); transform: none; }
+}
+@keyframes glitchOut {
+  0%   { opacity: 1; }
+  30%  { opacity: 0.4; transform: translateX(-6px) skewX(-1deg); }
+  60%  { opacity: 0.2; transform: translateX(4px); }
+  100% { opacity: 0; }
+}
+
+/* ── SHARED LAYOUT ── */
+.slide-inner {
+  width: 100%; height: 100%;
+  display: grid;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── SLIDE 1: TITLE ── */
+#s1 .slide-inner {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+  background: var(--ink);
+}
+.s1-left {
+  border-right: 1px solid rgba(240,235,224,0.1);
+  padding: 56px 48px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  position: relative; overflow: hidden;
+}
+.s1-left::before {
+  content: '';
+  position: absolute; bottom: -120px; left: -120px;
+  width: 500px; height: 500px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(192,57,43,0.18) 0%, transparent 65%);
+  pointer-events: none;
+}
+.s1-eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem; letter-spacing: 0.18em;
+  color: var(--red-bright); text-transform: uppercase;
+}
+.s1-headline {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(5rem, 10vw, 9rem);
+  font-weight: 900; line-height: 0.88;
+  color: var(--cream); text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+.s1-headline em { color: var(--red-bright); font-style: normal; }
+.s1-sub {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic; font-size: 1.1rem;
+  color: var(--muted); line-height: 1.5;
+  border-top: 1px solid var(--very-muted);
+  padding-top: 20px;
+}
+.s1-right {
+  padding: 56px 48px;
+  display: flex; flex-direction: column; justify-content: flex-end; gap: 1px;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 39px,
+    rgba(240,235,224,0.05) 39px,
+    rgba(240,235,224,0.05) 40px
+  );
+}
+.s1-stat {
+  padding: 22px 0;
+  border-bottom: 1px solid var(--very-muted);
+}
+.s1-stat:first-child { border-top: 1px solid var(--very-muted); }
+.s1-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 3.5rem; font-weight: 900; line-height: 1;
+  color: var(--cream);
+}
+.s1-num span { color: var(--red-bright); }
+.s1-desc {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem; color: var(--muted);
+  letter-spacing: 0.08em; margin-top: 4px; text-transform: uppercase;
+}
+.s1-name {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem; color: rgba(240,235,224,0.2);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  margin-top: 40px;
+}
+
+/* ── SLIDE 2: CONTEXT ── */
+#s2 .slide-inner {
+  grid-template-columns: 56px 1fr 1fr;
+  background: var(--ink);
+}
+.s2-sidebar {
+  background: var(--red);
+  display: flex; align-items: center; justify-content: center;
+}
+.s2-sidebar span {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.3em;
+  color: var(--cream); text-transform: uppercase;
+  writing-mode: vertical-rl; transform: rotate(180deg);
+}
+.s2-left {
+  padding: 56px 48px;
+  border-right: 1px solid var(--very-muted);
+  display: flex; flex-direction: column; justify-content: center; gap: 28px;
+}
+.s2-tag {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--red-bright);
+}
+.s2-h {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(3rem, 5vw, 4.5rem); font-weight: 900;
+  text-transform: uppercase; line-height: 0.92;
+  color: var(--cream); letter-spacing: -0.01em;
+}
+.s2-body {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1rem; line-height: 1.75;
+  color: rgba(240,235,224,0.6); font-style: italic;
+}
+.s2-right {
+  padding: 56px 48px;
+  display: flex; flex-direction: column; justify-content: center; gap: 20px;
+}
+.s2-block {
+  padding: 22px 24px;
+  border: 1px solid var(--very-muted);
+  position: relative;
+}
+.s2-block::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--red);
+}
+.s2-block-n {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2.8rem; font-weight: 900; color: var(--cream); line-height: 1;
+}
+.s2-block-n em { color: var(--red-bright); font-style: normal; }
+.s2-block-l {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem; color: var(--muted);
+  letter-spacing: 0.1em; text-transform: uppercase; margin-top: 5px;
+}
+
+/* ── TP SLIDES (3-7) ── */
+.tp-inner {
+  width: 100%; height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 1fr;
+  background: var(--ink);
+  position: relative;
+}
+.tp-topbar {
+  display: flex; align-items: stretch;
+  border-bottom: 1px solid var(--very-muted);
+  height: 80px; flex-shrink: 0;
+}
+.tp-num {
+  background: var(--red);
+  width: 80px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2rem; font-weight: 900; color: var(--cream);
+}
+.tp-title-wrap {
+  flex: 1; padding: 0 36px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-right: 1px solid var(--very-muted);
+}
+.tp-name-big {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem); font-weight: 900;
+  text-transform: uppercase; color: var(--cream); letter-spacing: 0.01em;
+}
+.tp-thresh-tag {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem; letter-spacing: 0.1em;
+  color: var(--amber); text-transform: uppercase; white-space: nowrap;
+  border: 1px solid rgba(230,126,34,0.35); padding: 5px 14px; border-radius: 2px;
+}
+.tp-icon-box {
+  width: 80px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem;
+}
+.tp-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  height: 100%;
+}
+.tp-cell {
+  padding: 28px 32px;
+  border-right: 1px solid var(--very-muted);
+  border-bottom: 1px solid var(--very-muted);
+  display: flex; flex-direction: column; gap: 12px;
+  overflow: hidden;
+}
+.tp-cell:nth-child(3) { border-right: none; }
+.tp-cell:nth-child(4) { border-bottom: none; }
+.tp-cell:nth-child(5) { border-bottom: none; }
+.tp-cell:nth-child(6) { border-right: none; border-bottom: none; }
+.tp-cell-wide {
+  grid-column: 1 / 3;
+}
+.tp-cell-sci {
+  background: rgba(192,57,43,0.05);
+  border-left: 3px solid var(--red) !important;
+}
+.cell-lbl {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.52rem; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--red-bright);
+}
+.cell-lbl.blue { color: rgba(100,180,255,0.7); }
+.cell-txt {
+  font-family: 'DM Serif Display', serif;
+  font-size: 0.88rem; line-height: 1.7;
+  color: rgba(240,235,224,0.62); font-style: italic;
+}
+.cascade-ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.cascade-ul li {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem; color: rgba(240,235,224,0.55);
+  line-height: 1.55; padding-left: 16px; position: relative;
+  letter-spacing: 0.02em;
+}
+.cascade-ul li::before {
+  content: '//'; position: absolute; left: 0;
+  color: var(--red-bright); font-size: 0.6rem;
+}
+
+/* ── SLIDE 8: CONCLUSION ── */
+#s8 .slide-inner {
+  grid-template-columns: 1fr 380px;
+  background: var(--ink);
+}
+.s8-left {
+  padding: 56px 56px;
+  display: flex; flex-direction: column; justify-content: center;
+  border-right: 1px solid var(--very-muted);
+  position: relative; overflow: hidden;
+}
+.s8-left::after {
+  content: 'ACT';
+  position: absolute; right: -20px; bottom: -60px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20rem; font-weight: 900; color: rgba(192,57,43,0.04);
+  line-height: 1; pointer-events: none; user-select: none;
+}
+.s8-tag {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--red-bright); margin-bottom: 20px;
+}
+.s8-h {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(3.5rem, 6vw, 6rem); font-weight: 900;
+  text-transform: uppercase; line-height: 0.88;
+  color: var(--cream); letter-spacing: -0.02em; margin-bottom: 32px;
+}
+.s8-h em { color: var(--red-bright); font-style: normal; }
+.s8-body {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.02rem; line-height: 1.8;
+  color: rgba(240,235,224,0.58); font-style: italic;
+  max-width: 520px;
+}
+.s8-right {
+  padding: 40px 36px;
+  display: flex; flex-direction: column; justify-content: center; gap: 0;
+}
+.src-lbl {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.52rem; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--red-bright); margin-bottom: 20px;
+}
+.src-card {
+  padding: 18px 0;
+  border-top: 1px solid var(--very-muted);
+}
+.src-card:last-child { border-bottom: 1px solid var(--very-muted); }
+.src-n {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.92rem; font-weight: 600;
+  color: var(--cream); margin-bottom: 5px; line-height: 1.3;
+}
+.src-u {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.52rem; color: rgba(240,235,224,0.3);
+  letter-spacing: 0.03em; word-break: break-all;
+}
+
+/* ── NAV ── */
+#nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 44px; z-index: 500;
+  display: flex; align-items: center;
+  background: rgba(10,10,10,0.95);
+  border-top: 1px solid var(--very-muted);
+  padding: 0 24px; gap: 16px;
+  backdrop-filter: blur(8px);
+}
+.nav-btn {
+  background: none; border: 1px solid var(--very-muted);
+  color: rgba(240,235,224,0.35); cursor: pointer;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem; padding: 5px 14px; letter-spacing: 0.1em;
+  transition: all 0.15s; border-radius: 2px;
+}
+.nav-btn:hover { border-color: var(--red); color: var(--red-bright); }
+.dot-row { display: flex; gap: 5px; align-items: center; flex: 1; justify-content: center; }
+.dot {
+  width: 20px; height: 3px; background: var(--very-muted);
+  cursor: pointer; transition: all 0.2s; border-radius: 1px;
+}
+.dot.on { background: var(--red-bright); width: 32px; }
+.nav-count {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem; color: rgba(240,235,224,0.2); letter-spacing: 0.15em;
+}
+</style>
+</head>
+<body>
+
+<div id="deck">
+
+  <!-- SLIDE 1 -->
+  <div class="slide active" id="s1">
+    <div class="slide-inner">
+      <div class="s1-left">
+        <div class="s1-eyebrow">// Science 10 — Unit D — Research Project</div>
+        <div class="s1-headline">Climate<br><em>Tipping</em><br>Points</div>
+        <div class="s1-sub">The thresholds we cannot uncross — and the science behind why the debate gets them wrong.</div>
+      </div>
+      <div class="s1-right">
+        <div class="s1-stat">
+          <div class="s1-num"><span>+</span>1.1°C</div>
+          <div class="s1-desc">Current warming above pre-industrial levels</div>
+        </div>
+        <div class="s1-stat">
+          <div class="s1-num">1.5°C</div>
+          <div class="s1-desc">Paris Agreement target — several tipping points activate here</div>
+        </div>
+        <div class="s1-stat">
+          <div class="s1-num"><span>5</span></div>
+          <div class="s1-desc">Interconnected tipping points covered</div>
+        </div>
+        <div class="s1-name">// Yassine — Science 10</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2 -->
+  <div class="slide" id="s2">
+    <div class="slide-inner">
+      <div class="s2-sidebar"><span>Context</span></div>
+      <div class="s2-left">
+        <div class="s2-tag">// 00 — Background</div>
+        <div class="s2-h">What is a<br>Tipping<br>Point?</div>
+        <div class="s2-body">A tipping point is a threshold in Earth's climate system. Cross it, and the change becomes self-sustaining. It no longer needs us to keep going. It feeds itself.<br><br>This is what makes climate tipping points different from ordinary environmental problems. Most problems stop when we stop causing them. Tipping points do not. Once triggered, they run.<br><br>The debate around climate change often ignores this entirely.</div>
+      </div>
+      <div class="s2-right">
+        <div class="s2-block">
+          <div class="s2-block-n"><em>+</em>1.1°C</div>
+          <div class="s2-block-l">We are already within the lower threshold of some tipping points</div>
+        </div>
+        <div class="s2-block">
+          <div class="s2-block-n">1.5°C</div>
+          <div class="s2-block-l">Paris target — multiple systems may already activate</div>
+        </div>
+        <div class="s2-block">
+          <div class="s2-block-n"><em>5</em></div>
+          <div class="s2-block-l">Major interconnected systems at risk — covered here</div>
+        </div>
+        <div class="s2-block">
+          <div class="s2-block-n"><em>∞</em></div>
+          <div class="s2-block-l">Once a tipping point is crossed, it cannot be uncrossed on human timescales</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: ARCTIC -->
+  <div class="slide" id="s3">
+    <div class="tp-inner">
+      <div class="tp-topbar">
+        <div class="tp-num">01</div>
+        <div class="tp-title-wrap">
+          <div class="tp-name-big">Arctic Sea Ice</div>
+          <div class="tp-thresh-tag">⚠ Triggered at ~1.5°C</div>
+        </div>
+        <div class="tp-icon-box">🧊</div>
+      </div>
+      <div class="tp-body">
+        <div class="tp-cell tp-cell-wide">
+          <div class="cell-lbl">What is it?</div>
+          <div class="cell-txt">Sea ice is white. It reflects roughly 85% of incoming sunlight back into outer space. How about the water below? It absorbs around 94% of that sunlight. Every time Arctic ice melts, the result replaces what was lost with something capable of absorbing heat rather than reflecting it. The melting process speeds up. More ocean surface exposed. Increased heat absorption. Repeat the process endlessly.</div>
+        </div>
+        <div class="tp-cell">
+          <div class="cell-lbl">If crossed...</div>
+          <div class="cell-txt">No turning point possible. For the first time in 3 million years, an ice-free Arctic summer may become a reality. Not in the distant future but in this generation according to scientists. Once the self-sustaining cycle gains momentum, it will feed on itself.</div>
+        </div>
+        <div class="tp-cell">
+          <div class="cell-lbl">Chain reaction — triggers</div>
+          <ul class="cascade-ul">
+            <li>Melt rate at Greenland reaches incredible heights</li>
+            <li>Freshwater flow causes major changes in Atlantic currents</li>
+            <li>Methane emissions begin from permafrost in Siberia & Canada</li>
+          </ul>
+        </div>
+        <div class="tp-cell tp-cell-sci">
+          <div class="cell-lbl blue">⚡ Science connection</div>
+          <div class="cell-txt">This is a classic positive feedback loop. We studied one during the class, and here it is, a real-life example. A change creates a response, which strengthens the original trigger. Albedo figures are no mere numbers; they are responsible for the much higher Arctic warming rate than anywhere else.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: GREENLAND -->
+  <div class="slide" id="s4">
+    <div class="tp-inner">
+      <div class="tp-topbar">
+        <div class="tp-num">02</div>
+        <div class="tp-title-wrap">
+          <div class="tp-name-big">Greenland Ice Sheet</div>
+          <div class="tp-thresh-tag">⚠ Triggered at ~1.5°C</div>
+        </div>
+        <div class="tp-icon-box">🏔️</div>
+      </div>
+      <div class="tp-body">
+        <div class="tp-cell tp-cell-wide">
+          <div class="cell-lbl">What is it?</div>
+          <div class="cell-txt">Greenland is holding about 7 metres of sea level rise hostage in frozen form. It's been losing ice every single year since the 1990s. What makes this one especially dangerous is that as the ice melts, the surface drops to lower, warmer elevations which speeds up the melt which drops the surface further. It feeds itself.</div>
+        </div>
+        <div class="tp-cell">
+          <div class="cell-lbl">If crossed...</div>
+          <div class="cell-txt">Every coastal city on Earth changes permanently. Vancouver, New York, Tokyo, London all partially underwater, not in a disaster movie way, but in a slow, irreversible, generations-long way. There's no engineering solution big enough to stop 7 metres of sea level rise.</div>
+        </div>
+        <div class="tp-cell">
+          <div class="cell-lbl">Chain reaction — triggers</div>
+          <ul class="cascade-ul">
+            <li>6-7 metres of eventual sea level rise, locking in centuries of flooding</li>
+            <li>Freshwater input shuts down the Atlantic current</li>
+            <li>Weather patterns across the entire Northern Hemisphere shift</li>
+          </ul>
+        </div>
+        <div class="tp-cell tp-cell-sci">
+          <div class="cell-lbl blue">⚡ Science connection</div>
+          <div class="cell-txt">The same albedo effect from the Arctic unit applies here, combined with thermal energy and elevation as the surface lowers into warmer air, it melts faster. That's three Grade 10 concepts stacked into one feedback loop.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: AMAZON -->
+  <div class="slide" id="s5">
+    <div class="tp-inner">
+      <div class="tp-topbar">
+        <div class="tp-num">03</div>
+        <div class="tp-title-wrap">
+          <div class="tp-name-big">Amazon Rainforest</div>
+          <div class="tp-thresh-tag">⚠ Triggered at ~3-4°C</div>
+        </div>
+        <div class="tp-icon-box">🌿</div>
+      </div>
+      <div class="tp-body">
+        <div class="tp-cell tp-cell-wide">
+          <div class="cell-lbl">What is it?</div>
+          <div class="cell-txt">Many view the Amazon rainforest as being under attack from climate change. What they don't realize is that the forest is not only a casualty but a contributor too. This is due to the fact that the Amazon generates its own rain. How? Trees pull water from the ground and release it as moisture into the air. That moisture rises, forms clouds, and falls as rain. Then the trees drink it and the cycle repeats. Cut down enough trees, or dry out the region with rising heat, and the cycle breaks. The forest stops making rain. Then more trees die. Then more rain stops.</div>
+        </div>
+        <div class="tp-cell">
+          <div class="cell-lbl">If crossed...</div>
+          <div class="cell-txt">The largest tropical rainforest on Earth converts to dry savannah. About 150-200 billion tonnes of stored carbon get released into the atmosphere roughly a decade's worth of all human emissions dumped at once. Every other tipping point on this map gets hit at the same time.</div>
+        </div>
+        <div class="tp-cell">
+          <div class="cell-lbl">Chain reaction — triggers</div>
+          <ul class="cascade-ul">
+            <li>Catastrophic CO₂ release accelerates global warming across the board</li>
+            <li>Roughly 10% of Earth's total biodiversity gone</li>
+            <li>South American rainfall collapses affecting agriculture for hundreds of millions</li>
+          </ul>
+        </div>
+        <div class="tp-cell tp-cell-sci">
+          <div class="cell-lbl blue">⚡ Science connection</div>
+          <div class="cell-txt">The Amazon is a living carbon sink a direct application of the carbon cycle and photosynthesis from class. It also connects to ecosystem energy flow: when the producers collapse, everything built on top of them collapses too.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: WAIS -->
+  <div class="slide" id="s6">
+    <div class="tp-inner">
+      <div class="tp-topbar">
+        <div class="tp-num">04</div>
+        <div class="tp-title-wrap">
+          <div class="tp-name-big">West Antarctic Ice Sheet</div>
+          <div class="tp-thresh-tag">⚠ May already be crossed</div>
+        </div>
+        <div class="tp-icon-box">🌊</div>
+      </div>
+      <div class="tp-body">
+        <div class="tp-cell tp-cell-wide">
+          <div class="cell-lbl">What is it?</div>
+          <div class="cell-txt">Typically, ice sheets reside upon land above sea level. This one does not. The West Antarctic Ice Sheet sits atop bedrock that lies beneath the ocean surface, which means warm seawater can slip underneath it and eat away at it from below. There is no shoreline acting as a barrier. No natural wall to hold it back. On top of that, the bedrock slopes inward, meaning as the edges melt and retreat, they expose even more ice to warm water. The further it retreats, the faster it goes. It is a system designed by geography to fail once it starts.</div>
+        </div>
+        <div class="tp-cell">
+          <div class="cell-lbl">If crossed...</div>
+          <div class="cell-txt">There's a good chance that this one has already been crossed. If that's the case, then it's only a matter of time before 3-5 meters worth of sea level increase comes about. These are changes that won't be making headlines due to their gradual nature; however, they are irreversible.</div>
+        </div>
+        <div class="tp-cell">
+          <div class="cell-lbl">Chain reaction — triggers</div>
+          <ul class="cascade-ul">
+            <li>3-5 meters of guaranteed sea level increase over the centuries to come</li>
+            <li>Furthers destabilization of Greenland Ice Sheet</li>
+            <li>Changes to global ocean circulation impacting global weather</li>
+          </ul>
+        </div>
+        <div class="tp-cell tp-cell-sci">
+          <div class="cell-lbl blue">⚡ Science connection</div>
+          <div class="cell-txt">Heat transfer and convection currents in the oceans will cause this phenomenon to occur. The warming waters are less dense and thus rise up and move around the sheet. This involves thermodynamics and fluid mechanics concepts taught in Grade 10.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: AMOC -->
+  <div class="slide" id="s7">
+    <div class="tp-inner">
+      <div class="tp-topbar">
+        <div class="tp-num">05</div>
+        <div class="tp-title-wrap">
+          <div class="tp-name-big">Ocean Currents in the Atlantic</div>
+          <div class="tp-thresh-tag">⚠ Weakening now</div>
+        </div>
+        <div class="tp-icon-box">🌀</div>
+      </div>
+      <div class="tp-body">
+        <div class="tp-cell tp-cell-wide">
+          <div class="cell-lbl">What is it?</div>
+          <div class="cell-txt">The Atlantic Ocean contains a massive conveyor belt. Warm surface water travels north, where it cools, becomes denser and saltier, sinks to the ocean floor, and flows back south as deep cold water. This loop has been running for thousands of years and it controls the climate of entire continents. It is the reason Western Europe is warm enough to be populated the way it is. It influences when monsoons happen in Africa and South Asia. It shapes weather patterns across North America. And it is already slowing down. The last time it significantly weakened was 12,000 years ago and parts of Europe dropped 10 degrees Celsius in under a decade.</div>
+        </div>
+        <div class="tp-cell">
+          <div class="cell-lbl">If crossed...</div>
+          <div class="cell-txt">Temperatures could drop by 5-10 degrees in Europe while other places are heating up. Levels of the ocean on the US East Coast would rise by an additional metre. Climate in areas with monsoons (on which billions of people rely for food and freshwater) would change unpredictably.</div>
+        </div>
+        <div class="tp-cell">
+          <div class="cell-lbl">Chain reaction — triggers</div>
+          <ul class="cascade-ul">
+            <li>Temperature drops 5-10°C in Europe in decades</li>
+            <li>Less rainfall in the Amazon, risking rainforest collapse</li>
+            <li>Disruption of monsoon systems in Africa and South Asia</li>
+          </ul>
+        </div>
+        <div class="tp-cell tp-cell-sci">
+          <div class="cell-lbl blue">⚡ Science connection</div>
+          <div class="cell-txt">AMOC works via thermohaline circulation (water movement due to differences in temperature and salt content affecting density). Thermohaline circulation, density, and convection currents are Grade 10 science curriculum topics.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: CONCLUSION -->
+  <div class="slide" id="s8">
+    <div class="slide-inner">
+      <div class="s8-left">
+        <div class="s8-tag">// 08 — Conclusion</div>
+        <div class="s8-h">The Domino<br>Effect is<br><em>Already</em><br>in Motion</div>
+        <div class="s8-body">At just 1.1°C of warming, we are already within the lower threshold of some of these tipping points. These are not distant future problems. They are present-tense physics. The science is not debated among climate scientists. What is debated is how fast, and whether we act before the dominoes fall on each other.</div>
+      </div>
+      <div class="s8-right">
+        <div class="src-lbl">// Sources</div>
+        <div class="src-card">
+          <div class="src-n">UCAR Center for Science Education</div>
+          <div class="src-u">scied.ucar.edu/learning-zone/earth-system/climate-system/key-tipping-points</div>
+        </div>
+        <div class="src-card">
+          <div class="src-n">Carbon Brief — McSweeney, 2020</div>
+          <div class="src-u">carbonbrief.org/explainer-nine-tipping-points-that-could-be-triggered-by-climate-change</div>
+        </div>
+        <div class="src-card">
+          <div class="src-n">Science Journal — Armstrong McKay et al., 2022</div>
+          <div class="src-u">science.org/doi/10.1126/science.abn7950</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- NAV BAR -->
+<div id="nav">
+  <button class="nav-btn" id="prev">← PREV</button>
+  <div class="dot-row" id="dots"></div>
+  <span class="nav-count" id="count">01 / 08</span>
+  <button class="nav-btn" id="next">NEXT →</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const dotsEl = document.getElementById('dots');
+  const countEl = document.getElementById('count');
+  let cur = 0;
+
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' on' : '');
+    d.onclick = () => go(i);
+    dotsEl.appendChild(d);
+  });
+
+  function go(n) {
+    if (n === cur) return;
+    slides[cur].classList.remove('active');
+    dotsEl.children[cur].classList.remove('on');
+    cur = ((n % slides.length) + slides.length) % slides.length;
+    slides[cur].classList.add('active');
+    dotsEl.children[cur].classList.add('on');
+    countEl.textContent = String(cur + 1).padStart(2,'0') + ' / ' + String(slides.length).padStart(2,'0');
+  }
+
+  document.getElementById('prev').onclick = () => go(cur - 1);
+  document.getElementById('next').onclick = () => go(cur + 1);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(cur + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(cur - 1);
+  });
+</script>
+</body>
+</html>
